@@ -8,7 +8,7 @@ export class UserItem {
     readonly isActive: boolean,
     readonly first_name: string,
     readonly last_name: string,
-    readonly date_joined: Date,
-    readonly last_login: Date
+    readonly date_joined: string,
+    readonly last_login: string
   ) {}
 }
