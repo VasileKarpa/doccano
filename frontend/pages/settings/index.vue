@@ -10,6 +10,22 @@
 
       <v-btn
         class="text-capitalize ms-2"
+        :disabled="!canEdit"
+        outlined
+        @click.stop="dialogEdit = true"
+      >
+        {{ $t('generic.edit') }}
+      </v-btn>
+      <v-dialog v-model="dialogEdit">
+        <form-edit
+          :user="selected[0]"
+          @cancel="dialogEdit = false"
+          @save="onEditSave"
+        />
+      </v-dialog>
+
+      <v-btn
+        class="text-capitalize ms-2"
         :disabled="!canDelete"
         outlined
         @click.stop="dialogDelete = true"
@@ -22,12 +38,12 @@
     </v-card-title>
 
     <users-list
-        v-model="selected"
-        :items="users.items"
-        :is-loading="isLoading"
-        :total="users.count"
-        @update:query="updateQuery"
-        @search="onSearch"
+      v-model="selected"
+      :items="users.items"
+      :is-loading="isLoading"
+      :total="users.count"
+      @update:query="updateQuery"
+      @search="onSearch"
     />
   </v-card>
 </template>
@@ -39,6 +55,7 @@ import { mapGetters } from 'vuex'
 import UsersList from '@/components/users/UsersList.vue'
 import FormDelete from '@/components/users/FormDelete.vue'
 import FormCreate from '@/components/settings/FormCreate.vue'
+import FormEdit from '@/components/users/FormEdit.vue'
 import { Page } from '~/domain/models/page'
 import { User } from '~/domain/models/user'
 import { SearchQueryData } from '~/services/application/user/userApplicationService'
@@ -47,7 +64,8 @@ export default Vue.extend({
   components: {
     UsersList,
     FormDelete,
-    FormCreate
+    FormCreate,
+    FormEdit
   },
   layout: 'projects',
   middleware: ['check-auth', 'auth'],
@@ -56,6 +74,7 @@ export default Vue.extend({
     return {
       dialogCreate: false,
       dialogDelete: false,
+      dialogEdit: false,
       users: new Page<User>(0, null, null, []),
       selected: [] as User[],
       isLoading: false
@@ -70,6 +89,9 @@ export default Vue.extend({
     ...mapGetters('auth', ['isStaff']),
     canDelete(): boolean {
       return this.selected.length > 0
+    },
+    canEdit(): boolean {
+      return this.selected.length === 1 // Edit is only available when exactly one user is selected
     }
   },
 
@@ -103,9 +125,19 @@ export default Vue.extend({
       this.$fetch()
     },
 
+    async onEditSave(updatedUser: User) {
+      try {
+        await this.$repositories.user.update(updatedUser.id, updatedUser)
+        this.dialogEdit = false
+        this.$fetch()
+      } catch (error) {
+        console.error('Erro ao atualizar utilizador:', error)
+      }
+    },
+
     async remove() {
       try {
-        console.log("Iniciando remoção de usuários. Selecionados:", this.selected);
+        console.log("Iniciando remoção de utilizadores. Selecionados:", this.selected);
         const ids = this.selected.map(user => user.id);
         console.log("IDs dos usuários a serem deletados:", ids);
         await this.$repositories.user.bulkDelete(ids);
@@ -121,3 +153,4 @@ export default Vue.extend({
   }
 })
 </script>
+

@@ -20,8 +20,6 @@ function toModel(item: { [key: string]: any }): UserItem {
   )
 }
 
-
-
 function toPayload(item: { [key: string]: any }): { [key: string]: any } {
   return {
     username: item.username,
@@ -88,4 +86,14 @@ export class APIUserRepository {
     console.log('Resposta do backend:', response.data);
     return toModel(response.data)
   }
+
+  async update(userId: number, fields: { [key: string]: any }): Promise<UserItem> {
+  const url = `/users/${userId}/update`; // Define the update endpoint
+  const payload = toPayload(fields);
+  console.log('Updating user with payload:', payload);
+
+  const response = await this.request.put(url, payload);
+  return toModel(response.data);
+}
+
 }

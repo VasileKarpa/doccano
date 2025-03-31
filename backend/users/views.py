@@ -97,3 +97,15 @@ class BulkDeleteUsers(generics.GenericAPIView):
             return Response({"detail": "IDs not provided or invalid."}, status=status.HTTP_400_BAD_REQUEST)
         User.objects.filter(id__in=ids).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class UserUpdateView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated & IsAdminUser]
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
