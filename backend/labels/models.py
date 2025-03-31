@@ -1,8 +1,10 @@
 import uuid
-
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
+from projects.models import Project
 
 from .managers import (
     BoundingBoxManager,
@@ -153,3 +155,15 @@ class Segmentation(Label):
     points = models.JSONField(default=list)
     label = models.ForeignKey(to=CategoryType, on_delete=models.CASCADE)
     example = models.ForeignKey(to=Example, on_delete=models.CASCADE, related_name="segmentations")
+
+    class Perspective(models.Model):
+        name = models.CharField(max_length=255)
+        description = models.TextField(blank=True)
+        project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+    class AnnotationPerspective(models.Model):
+        content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+        object_id = models.PositiveIntegerField()
+        annotation = GenericForeignKey('content_type', 'object_id')
+        perspective = models.ForeignKey('labels.Perspective', on_delete=models.CASCADE)
+        created_at = models.DateTimeField(auto_now_add=True)

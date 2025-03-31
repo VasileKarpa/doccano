@@ -15,6 +15,8 @@ from .views import (
     TextLabelListAPI,
 )
 
+
+
 urlpatterns = [
     path(route="examples/<int:example_id>/relations", view=RelationList.as_view(), name="relation_list"),
     path(

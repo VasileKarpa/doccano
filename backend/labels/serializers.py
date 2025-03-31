@@ -1,8 +1,9 @@
 from rest_framework import serializers
-
+from django.apps import apps
 from .models import BoundingBox, Category, Relation, Segmentation, Span, TextLabel
 from examples.models import Example
 from label_types.models import CategoryType, RelationType, SpanType
+from labels.models import Perspective, AnnotationPerspective
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -22,6 +23,15 @@ class CategorySerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("user",)
 
+class PerspectiveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Perspective
+        fields = '__all__'
+
+class AnnotationPerspectiveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnnotationPerspective
+        fields = '__all__'
 
 class SpanSerializer(serializers.ModelSerializer):
     label = serializers.PrimaryKeyRelatedField(queryset=SpanType.objects.all())
@@ -111,3 +121,13 @@ class SegmentationSerializer(serializers.ModelSerializer):
             "points",
         )
         read_only_fields = ("user",)
+
+        class PerspectiveSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = apps.get_model('labels', 'Perspective')
+                fields = '__all__'
+
+        class AnnotationPerspectiveSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = apps.get_model('labels', 'AnnotationPerspective')
+                fields = '__all__'

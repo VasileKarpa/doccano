@@ -3,9 +3,7 @@ import i18n from './i18n'
 
 export default {
   ssr: false,
-  /*
-   ** Headers of the page
-   */
+
   head: {
     titleTemplate: '%s - ' + process.env.npm_package_name,
     title: process.env.npm_package_name || '',
@@ -22,24 +20,17 @@ export default {
   },
 
   server: {
-    host: '0.0.0.0' // default: localhost
+    host: '0.0.0.0'
   },
 
   env: {
     baseUrl: '/v1'
   },
 
-  /*
-   ** Customize the progress-bar color
-   */
   loading: { color: '#fff' },
-  /*
-   ** Global CSS
-   */
+
   css: [],
-  /*
-   ** Plugins to load before mounting the App
-   */
+
   plugins: [
     '~/plugins/filters.js',
     '~/plugins/vue-youtube.js',
@@ -50,12 +41,9 @@ export default {
     '~/plugins/color.ts',
     '~/plugins/role.ts'
   ],
-  /*
-   ** Nuxt.js modules
-   */
+
   modules: [
     ['nuxt-i18n', i18n],
-    // Doc: https://axios.nuxtjs.org/usage
     '@nuxtjs/axios',
     '@nuxtjs/eslint-module'
   ],
@@ -93,16 +81,12 @@ export default {
       }
     ]
   ],
-  /*
-   ** Axios module configuration
-   ** See https://axios.nuxtjs.org/options
-   */
+
   axios: {
     proxy: true
   },
 
   proxy: {
-    // Use a fake value for use at build-time
     '/v1/': {
       target: process.env.API_URL || 'http://127.0.0.1:8000'
     },
@@ -110,10 +94,7 @@ export default {
       target: process.env.API_URL || 'http://127.0.0.1:8000'
     }
   },
-  /*
-   ** vuetify module configuration
-   ** https://github.com/nuxt-community/vuetify-module
-   */
+
   vuetify: {
     theme: {
       primary: colors.blue.darken2,
@@ -145,22 +126,11 @@ export default {
       }
     }
   },
-  /*
-   ** Build configuration
-   */
+
   build: {
-    /*
-     ** You can extend webpack config here
-     */
+    transpile: ['@flatten-js/core'],
     publicPath: process.env.PUBLIC_PATH || '/_nuxt/',
     extend(config, _) {
-      // config.module.rules.push({
-      //   test: /\.(txt|csv|conll|jsonl)$/i,
-      //   loader: 'file-loader',
-      //   options: {
-      //     name: '[path][name].[ext]'
-      //   }
-      // })
       config.module.rules.push({
         enforce: 'pre',
         test: /\.(txt|csv|json|jsonl)$/,

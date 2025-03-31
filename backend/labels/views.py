@@ -3,10 +3,9 @@ from typing import Type
 
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
 from .permissions import CanEditLabel
 from .serializers import (
     BoundingBoxSerializer,
@@ -16,6 +15,7 @@ from .serializers import (
     SpanSerializer,
     TextLabelSerializer,
 )
+
 from labels.models import (
     BoundingBox,
     Category,
@@ -34,6 +34,7 @@ class BaseListAPI(generics.ListCreateAPIView):
     pagination_class = None
     permission_classes = [IsAuthenticated & IsProjectMember]
     swagger_schema = None
+
 
     @property
     def project(self):
@@ -141,3 +142,5 @@ class SegmentationListAPI(BaseListAPI):
 class SegmentationDetailAPI(BaseDetailAPI):
     queryset = Segmentation.objects.all()
     serializer_class = SegmentationSerializer
+
+

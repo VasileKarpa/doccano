@@ -15,6 +15,7 @@
       </toolbar-laptop>
       <toolbar-mobile :total="totalExample" class="d-flex d-sm-none" />
     </template>
+
     <template #content>
       <v-card
         v-shortkey="shortKeys"
@@ -32,8 +33,12 @@
         </v-card-title>
         <v-divider />
         <v-card-text class="title highlight" style="white-space: pre-wrap" v-text="example.text" />
+
+        <PerspectiveAssociation :contentTypeId="12" :annotationId="example.id" />
+
       </v-card>
     </template>
+
     <template #sidebar>
       <annotation-progress :progress="progress" />
       <list-metadata :metadata="example.meta" class="mt-4" />
@@ -55,6 +60,8 @@ import { useExampleItem } from '@/composables/useExampleItem'
 import { useLabelList } from '@/composables/useLabelList'
 import { useProjectItem } from '@/composables/useProjectItem'
 import { useTeacherList } from '@/composables/useTeacherList'
+import PerspectiveAssociation from '@/components/perspectives/PerspectiveAssociation.vue'
+import { usePerspective } from '@/composables/usePerspective'
 
 export default {
   components: {
@@ -65,7 +72,8 @@ export default {
     LayoutText,
     ListMetadata,
     ToolbarLaptop,
-    ToolbarMobile
+    ToolbarMobile,
+    PerspectiveAssociation
   },
   layout: 'workspace',
 
@@ -91,6 +99,15 @@ export default {
     const { state: labelState, getLabelList, shortKeys } = useLabelList(app.$services.categoryType)
     const labelComponent = ref('label-group')
 
+    const {
+      perspectives,
+      associations,
+      fetchPerspectives,
+      fetchAssociations,
+      associate,
+      removeAssociation
+    } = usePerspective()
+
     getLabelList(projectId)
     getProjectById(projectId)
     updateProgress(projectId)
@@ -108,11 +125,20 @@ export default {
         await getTeacherList(projectId, exampleState.example.id)
       }
     })
+
     watch(query, fetch)
+
     watch(enableAutoLabeling, async (val) => {
       if (val && !exampleState.example.isConfirmed) {
         await autoLabel(exampleState.example.id)
         await getTeacherList(exampleState.example.id)
+      }
+    })
+
+    watch(() => exampleState.example.id, async (newId) => {
+      if (newId) {
+        await fetchPerspectives()
+        await fetchAssociations(newId)
       }
     })
 
@@ -128,7 +154,11 @@ export default {
       enableAutoLabeling,
       labelComponent,
       removeTeacher,
-      shortKeys
+      shortKeys,
+      perspectives,
+      associations,
+      associate,
+      removeAssociation
     }
   }
 }
