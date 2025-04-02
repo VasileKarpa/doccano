@@ -51,6 +51,10 @@ export const canDefineLabel = (projectType: ProjectType): boolean => {
   return canDefineCategory(projectType) || canDefineSpan(projectType)
 }
 
+export const canDefinePerspectives = (projectType: ProjectType): boolean => {
+  return canDefineCategory(projectType)
+}
+
 export class Project {
   name: string
   description: string
@@ -126,6 +130,10 @@ export class Project {
 
   get canDefineLabel(): boolean {
     return canDefineLabel(this.projectType)
+  }
+
+  get canDefinePerspectives() : boolean {
+    return canDefinePerspectives(this.projectType)
   }
 
   get canDefineCategory(): boolean {
