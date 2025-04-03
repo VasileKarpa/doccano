@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, status, views
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.generics import RetrieveDestroyAPIView
 
 from projects.models import Project
 from projects.permissions import IsProjectAdmin, IsProjectStaffAndReadOnly
@@ -113,7 +114,7 @@ class PerspectiveListCreateView(generics.ListCreateAPIView):
             print(">>> perform_create: project_id recebido:", project_id)
             project = get_object_or_404(Project, pk=project_id)
             print(">>> perform_create: Projeto encontrado:", project)
-            serializer.save(project=project)
+            serializer.save(project=project, created_by=self.request.user)
             print(">>> perform_create: Perspectiva criada com sucesso")
         except Exception as e:
             print(">>> Erro em perform_create:", e)
@@ -128,3 +129,9 @@ class PerspectiveListCreateView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         super().perform_destroy(instance)
+
+class PerspectiveDetailView(RetrieveDestroyAPIView):
+    serializer_class = PerspectiveSerializer
+    permission_classes = [IsAuthenticated & IsProjectAdmin]  # Ou ajuste conforme necessário
+    queryset = Perspective.objects.all()
+    lookup_url_kwarg = "perspective_id"

@@ -35,8 +35,10 @@ import {
   mdiCog,
   mdiCommentAccountOutline,
   mdiDatabase,
+  mdiViewDashboardEdit,
   mdiHome,
   mdiLabel,
+  mdiChartBox,
   mdiPlayCircleOutline
 } from '@mdi/js'
 import { getLinkToAnnotationPage } from '~/presenter/linkToAnnotationPage'
@@ -106,27 +108,36 @@ export default {
           isVisible: this.isProjectAdmin
         },
         {
+          icon: mdiViewDashboardEdit,
+          text: 'Perspective',
+          link: 'perspective',
+          isVisible: this.isProjectAdmin
+        },
+        {
           icon: mdiBookOpenOutline,
           text: this.$t('guideline.guideline'),
           link: 'guideline',
           isVisible: this.isProjectAdmin
         },
+
         {
           icon: mdiChartBar,
           text: this.$t('statistics.statistics'),
           link: 'metrics',
           isVisible: this.isProjectAdmin
         },
+
+        {
+          icon: mdiChartBox,
+          text: this.$t('Discrepancies'),
+          link: 'discrepancies',
+          isVisible: this.isProjectAdmin
+        },
+
         {
           icon: mdiCog,
           text: this.$t('settings.title'),
           link: 'settings',
-          isVisible: this.isProjectAdmin
-        },
-        {
-          icon: mdiCog,
-          text: 'Perspective',
-          link: 'perspective',
           isVisible: this.isProjectAdmin
         }
       ]

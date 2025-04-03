@@ -148,12 +148,13 @@ class ProjectPolymorphicSerializer(PolymorphicSerializer):
     }
 
 class PerspectiveSerializer(serializers.ModelSerializer):
-    project = serializers.PrimaryKeyRelatedField(read_only=True)
+    project_id = serializers.IntegerField(source="project.id", read_only=True)
     created_by = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(read_only=True)  # Opcional, se quiser reforçar
 
     class Meta:
         model = Perspective
-        fields = ["id", "name", "data_type", "project", "created_by", "created_at"]
+        fields = ["id", "name", "data_type", "description", "project_id", "created_by", "created_at"]
 
     def __init__(self, *args, **kwargs):
         print(">>> PerspectiveSerializer __init__ chamado")
@@ -161,6 +162,5 @@ class PerspectiveSerializer(serializers.ModelSerializer):
 
     def get_created_by(self, obj):
         return obj.created_by.username if obj.created_by else None
-
 
 
