@@ -14,7 +14,8 @@ from .models import (
     Speech2textProject,
     Tag,
     TextClassificationProject,
-    Perspective,
+    Perspective, AnnotatorPerspective,
+
 )
 
 
@@ -175,5 +176,29 @@ class PerspectiveSerializer(serializers.ModelSerializer):
 
     def get_created_by(self, obj):
         return obj.created_by.username if obj.created_by else None
+
+class AnnotatorPerspectiveSerializer(serializers.ModelSerializer):
+    annotator_username = serializers.CharField(source="annotator.username", read_only=True)
+    perspective_name = serializers.CharField(source="perspective.name", read_only=True)
+
+    class Meta:
+        model = AnnotatorPerspective
+        fields = ['id', 'annotator', 'annotator_username', 'perspective', 'perspective_name', 'created_at']
+        read_only_fields = ['annotator_username', 'perspective_name', 'created_at']
+
+    def validate(self, data):
+        """
+        Custom validation to ensure no duplicate associations are created.
+        """
+        perspective = data.get('perspective')
+        annotator = data.get('annotator')
+
+        # Check if the perspective is already associated with another annotator
+        if perspective and AnnotatorPerspective.objects.filter(perspective=perspective).exclude(
+                annotator=annotator).exists():
+            raise serializers.ValidationError("Esta perspectiva já está associada a outro anotador.")
+
+        return data
+
 
 

@@ -3,6 +3,7 @@ import uuid
 from typing import Any, Dict, Optional
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
@@ -260,3 +261,32 @@ class Perspective(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.data_type}) - Project: {self.project.name}"
+
+class AnnotatorPerspective(models.Model):
+    annotator = models.ForeignKey(
+        get_user_model(),  # Obtém o modelo de usuário padrão ou personalizado
+        on_delete=models.CASCADE,
+        related_name='annotator_perspectives'
+    )
+    perspective = models.OneToOneField(
+        'Perspective',
+        on_delete=models.CASCADE,
+        related_name='annotator_perspective'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        if AnnotatorPerspective.objects.filter(perspective=self.perspective).exclude(id=self.id).exists():
+            raise ValidationError('Esta perspectiva já está associada a outro anotador.')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['annotator', 'perspective'], name='unique_annotator_perspective')
+        ]
+
+    def __str__(self):
+        return f'Annotator {self.annotator} - Perspective {self.perspective}'
+
+
+
+

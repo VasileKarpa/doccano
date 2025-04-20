@@ -1,64 +1,133 @@
 <template>
   <v-container>
-    <v-btn color="primary" @click="$router.push(`/projects/${projectId}/perspective/add`)">
+    <!-- Botão para criar nova perspectiva -->
+    <v-btn
+      :disabled="!projectId"
+      color="primary"
+      @click="$router.push(`/projects/${projectId}/perspective/add`)"
+    >
       Create new Perspective
     </v-btn>
 
+    <!-- Botão para gerenciar anotadores -->
+    <v-btn
+      :disabled="!projectId"
+      color="secondary"
+      class="ml-2"
+      @click="openAnnotatorManager"
+    >
+      Manage Annotators
+    </v-btn>
+
     <!-- Botão para excluir as perspectivas selecionadas -->
-    <v-btn color="error" class="ml-2" @click="openConfirmDialog" :disabled="!selected.length">
+    <v-btn
+      :disabled="!selected.length"
+      color="error"
+      class="ml-2"
+      @click="openConfirmDialog"
+    >
       Delete Perspective
     </v-btn>
 
     <!-- Botão para consultar os detalhes da perspectiva selecionada -->
-    <v-btn color="info" class="ml-2" @click="openDetailsDialog" :disabled="selected.length !== 1">
+    <v-btn
+      :disabled="selected.length !== 1"
+      color="info"
+      class="ml-2"
+      @click="openDetailsDialog"
+    >
       View Details
     </v-btn>
 
+    <!-- Tabela de perspectivas -->
     <v-data-table
-      v-if="perspectives && perspectives.length"
-      :headers="headers"
+      v-model="selected"
       :items="perspectives"
+      :headers="headers"
       item-value="id"
       show-select
-      v-model="selected"
       class="mt-4"
     >
-      <template #top>
+      <!-- Toolbar (parte superior da tabela) -->
+      <template v-slot:top>
         <v-toolbar flat>
-          <v-toolbar-title>Perspetivas</v-toolbar-title>
+          <v-toolbar-title>Perspectives</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
       </template>
+
+      <!-- Slot para a ação personalizada -->
+      <template v-slot:items="props">
+        <td>{{ props.item.name }}</td>
+        <td>{{ props.item.created_by }}</td>
+        <td>{{ props.item.description }}</td>
+        <td>
+          <v-btn color="success" small @click="openAnnotatorDialog(props.item)">
+            Associate Annotator
+          </v-btn>
+        </td>
+      </template>
     </v-data-table>
 
-    <div v-else class="mt-4">
+    <!-- Mensagem quando a lista estiver vazia -->
+    <div v-if="perspectives.length === 0" class="mt-4">
       <p>No perspective has been found.</p>
     </div>
 
+    <!-- Alertas de erro -->
     <v-alert v-if="error" type="error" dismissible class="mt-4">
       {{ error }}
     </v-alert>
 
-    <!-- Diálogo de confirmação -->
-    <v-dialog v-model="confirmDialog" max-width="500">
+    <!-- Diálogo para gerenciar anotadores -->
+    <v-dialog v-model="annotatorManagerDialog" max-width="800">
       <v-card>
-        <v-card-title class="headline">Confirmação</v-card-title>
+        <v-card-title class="headline">Manage Annotators</v-card-title>
         <v-card-text>
-          Are you sure you want to delete the selected perspective?
+          <p>Select the perspectives you want to associate with the annotator:</p>
+          <v-data-table
+            v-model="selectedAnnotatorPerspectives"
+            :items="perspectives"
+            :headers="annotatorHeaders"
+            multiple
+            item-value="id"
+            dense
+            class="mt-4"
+            show-select
+          >
+            <!-- Tabela que exibe perspectivas -->
+            <template v-slot:items="props">
+              <td>{{ props.item.name }}</td>
+              <td>{{ props.item.created_by }}</td>
+            </template>
+          </v-data-table>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text color="error" @click="deleteSelectedConfirmed">
-            Cancel
-          </v-btn>
-          <v-btn text color="primary" @click="confirmDialog = false">
+          <v-btn text color="error" @click="closeAnnotatorManager">Cancel</v-btn>
+          <v-btn text color="primary" @click="saveAnnotatorAssociations">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Diálogo de confirmação -->
+    <v-dialog v-model="confirmDialog" max-width="500">
+      <v-card>
+        <v-card-title class="headline">Confirmation</v-card-title>
+        <v-card-text>
+          Are you sure you want to delete the selected perspectives?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text color="error" @click="confirmDialog = false">Cancel</v-btn>
+          <v-btn text color="primary" @click="deleteSelectedConfirmed">
             Confirm
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Diálogo para exibir os detalhes da perspectiva -->
+    <!-- Diálogo para exibir os detalhes -->
     <v-dialog v-model="detailsDialog" max-width="600">
       <v-card>
         <v-card-title class="headline">Perspective Details</v-card-title>
@@ -90,10 +159,12 @@ export default {
     return {
       projectId: null,
       perspectives: [],
-      selected: [], // Perspectivas selecionadas
-      confirmDialog: false, // Controla a visibilidade do diálogo
-      detailsDialog: false, // Controla a visibilidade do diálogo de detalhes
-      selectedPerspective: null, // Armazena os detalhes da perspectiva selecionada
+      selected: [],
+      selectedAnnotatorPerspectives: [],
+      confirmDialog: false,
+      detailsDialog: false,
+      annotatorManagerDialog: false,
+      selectedPerspective: null,
       headers: [
         { text: "Name", value: "name" },
         { text: "Created By", value: "created_by" },
@@ -104,6 +175,11 @@ export default {
         { text: "Etiquette 5", value: "description_4", sortable: false },
         { text: "Etiquette 6", value: "description_5", sortable: false },
         { text: "Etiquette 7", value: "description_6", sortable: false },
+        { text: "Actions", value: "actions", sortable: false },
+      ],
+      annotatorHeaders: [
+        { text: "Name", value: "name" },
+        { text: "Created By", value: "created_by" },
       ],
       error: null,
     };
@@ -118,52 +194,91 @@ export default {
   },
   methods: {
     async fetchPerspectives() {
-      console.log(">>> Chamando getPerspectives com projectId:", this.projectId);
       try {
         this.error = null;
         const response = await this.$repositories.perspective.getPerspectives(this.projectId);
-        console.log(">>> Dados recebidos:", response);
         this.perspectives = response.results;
       } catch (error) {
-        console.error("Erro ao carregar perspetivas:", error);
-        this.error = "Erro ao carregar perspetivas. Veja o console para mais detalhes.";
+        console.error("Erro ao carregar perspectivas:", error);
+        this.error = "Erro ao carregar perspectivas. Veja o console para mais detalhes.";
       }
     },
+
+    openAnnotatorManager() {
+      this.annotatorManagerDialog = true;
+    },
+
+    closeAnnotatorManager() {
+      this.annotatorManagerDialog = false;
+    },
+
+   async saveAnnotatorAssociations() {
+    if (!this.projectId || !this.selectedAnnotatorPerspectives.length) {
+      this.error = "Selecione pelo menos uma perspectiva para associar.";
+      return;
+    }
+
+    if (!this.selectedAnnotatorId) {
+      this.error = "Selecione um anotador para associar às perspectivas.";
+      return;
+    }
+
+    try {
+      this.error = null;
+
+      for (const perspectiveId of this.selectedAnnotatorPerspectives) {
+        console.debug(
+          `Associando anotador ${this.selectedAnnotatorId} à perspectiva ${perspectiveId}`
+        );
+
+        await this.$apiPerspectiveRepository.associateAnnotatorToPerspective(
+          this.projectId,
+          perspectiveId,
+          this.selectedAnnotatorId
+        );
+      }
+
+      this.$toast.success("As perspectivas foram associadas com sucesso!");
+      this.annotatorManagerDialog = false;
+      this.loadPerspectives();
+    } catch (err) {
+      console.error("Erro ao associar perspectivas:", err.response ?? err);
+
+      if (err.response && err.response.data && err.response.data.detail) {
+        this.error = `Erro do servidor: ${err.response.data.detail}`;
+      } else {
+        this.error =
+          "Ocorreu um erro ao associar as perspectivas. Verifique os dados e tente novamente.";
+      }
+    }
+  },
+
+
+
+
+
     openConfirmDialog() {
       this.confirmDialog = true;
     },
+
     async deleteSelectedConfirmed() {
       try {
-        // Chama a função de deleção para cada perspectiva selecionada
-        for (const item of this.selected) {
-          await this.$repositories.perspective.deletePerspective(this.projectId, item.id);
+        for (const perspective of this.selected) {
+          await this.$repositories.perspective.deletePerspective(this.projectId, perspective.id);
         }
-        // Atualiza a lista removendo os itens deletados
-        this.perspectives = this.perspectives.filter(
-          (item) => !this.selected.some((sel) => sel.id === item.id)
-        );
-        // Limpa a seleção e fecha o diálogo
+        this.perspectives = this.perspectives.filter(item => !this.selected.includes(item));
         this.selected = [];
         this.confirmDialog = false;
       } catch (error) {
-        console.error("Erro ao excluir perspetiva(s):", error);
-        this.error = "Erro ao excluir perspetiva(s). Veja o console para mais detalhes.";
-        this.confirmDialog = false;
+        console.error("Erro ao excluir perspectivas:", error);
+        this.error = "Erro ao excluir perspectivas. Verifique o console.";
       }
     },
-    async openDetailsDialog() {
-      try {
-        if (this.selected.length === 1) {
-          const perspectiveId = this.selected[0].id;
-          this.selectedPerspective = await this.$repositories.perspective.getPerspectiveDetails(
-            this.projectId,
-            perspectiveId
-          );
-          this.detailsDialog = true;
-        }
-      } catch (error) {
-        console.error("Erro ao carregar detalhes da perspectiva:", error);
-        this.error = "Erro ao carregar detalhes da perspectiva. Veja o console para mais detalhes.";
+
+    openDetailsDialog() {
+      if (this.selected.length === 1) {
+        this.selectedPerspective = this.selected[0];
+        this.detailsDialog = true;
       }
     },
   },

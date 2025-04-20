@@ -3,6 +3,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, status, views
+from rest_framework.exceptions import APIException
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveDestroyAPIView
@@ -11,8 +12,9 @@ from projects.models import Project
 from projects.permissions import IsProjectAdmin, IsProjectStaffAndReadOnly
 from projects.serializers import ProjectPolymorphicSerializer
 
-from projects.models import Perspective
-from projects.serializers import PerspectiveSerializer
+from projects.models import Perspective, AnnotatorPerspective
+
+from projects.serializers import PerspectiveSerializer, AnnotatorPerspectiveSerializer
 
 
 class ProjectList(generics.ListCreateAPIView):
@@ -135,3 +137,62 @@ class PerspectiveDetailView(RetrieveDestroyAPIView):
     permission_classes = [IsAuthenticated & IsProjectAdmin]  # Ou ajuste conforme necessário
     queryset = Perspective.objects.all()
     lookup_url_kwarg = "perspective_id"
+
+class AnnotatorPerspectiveListCreateView(generics.ListCreateAPIView):
+    """
+    View para listar e criar associações entre Annotators e Perspectives.
+    """
+    serializer_class = AnnotatorPerspectiveSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Retorna as associações de anotadores para a perspectiva atual.
+        """
+        perspective_id = self.kwargs.get('perspective_id')
+        return AnnotatorPerspective.objects.filter(perspective_id=perspective_id)
+
+    def perform_create(self, serializer):
+        """
+        Cria uma nova associação de Annotator para uma Perspective, garantindo as restrições.
+        """
+        perspective_id = self.kwargs.get('perspective_id')
+        perspective = Perspective.objects.filter(id=perspective_id).first()
+
+        if not perspective:
+            raise APIException(detail='A perspectiva especificada não existe.', code=404)
+
+        # Validação já realizada no serializer
+        serializer.save(perspective=perspective, annotator=self.request.user)
+
+
+class AnnotatorPerspectiveDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    View para acessar, atualizar ou excluir uma associação específica entre Annotator e Perspective.
+    """
+    queryset = AnnotatorPerspective.objects.all()
+    serializer_class = AnnotatorPerspectiveSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
+
+    def perform_update(self, serializer):
+        """
+        Atualiza a associação verificando as restrições.
+        """
+        perspective_id = serializer.instance.perspective.id
+
+        if AnnotatorPerspective.objects.filter(
+                perspective_id=perspective_id
+        ).exclude(id=self.kwargs.get(self.lookup_field)).exists():
+            raise APIException(detail='Esta perspectiva já está associada a outro anotador.', code=400)
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """
+        Remove a associação sem restrições adicionais.
+        """
+        instance.delete()
+
+
+
