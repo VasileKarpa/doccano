@@ -185,13 +185,13 @@ export default {
 
       // Validate name
       if (!this.form.name.trim()) {
-        this.fieldErrors.name = "O título da perspetiva é obrigatório";
+        this.fieldErrors.name = "The perspective title is required";
         isValid = false;
       }
 
       // Validate main description
       if (!this.form.description.trim()) {
-        this.fieldErrors.description = "A primeira etiqueta é obrigatória";
+        this.fieldErrors.description = "The first etiquette is required";
         isValid = false;
       }
 
@@ -199,7 +199,7 @@ export default {
       for (let i = 1; i < this.numberOfDescriptions; i++) {
         const fieldName = `description_${i}`;
         if (!this.form[fieldName]?.trim()) {
-          this.fieldErrors[fieldName] = `A etiqueta ${i + 1} é obrigatória`;
+          this.fieldErrors[fieldName] = `Etiquette ${i + 1} is required`;
           isValid = false;
         }
       }
@@ -208,7 +208,7 @@ export default {
     },
     async submitForm() {
       if (!this.validateForm()) {
-        this.error = "Por favor, preencha todos os campos obrigatórios";
+        this.error = "Please fill in all required fields";
         return;
       }
       

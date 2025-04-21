@@ -92,13 +92,13 @@
       <v-card>
         <v-card-title class="headline d-flex align-center">
           <v-icon left color="error">mdi-delete</v-icon>
-          Confirmação de Eliminação
+          Delete Confirmation
           <v-chip color="error" small class="ml-2">
             {{ selected.length }} item(s)
           </v-chip>
         </v-card-title>
         <v-card-text>
-          <p class="mb-4">Tem a certeza que pretende eliminar as seguintes perspectivas?</p>
+          <p class="mb-4">Are you sure you want to delete the following perspectives?</p>
           
           <div class="delete-list-container">
             <div 
@@ -110,7 +110,7 @@
                 <v-icon color="error" class="mr-2">mdi-close-circle</v-icon>
                 <div>
                   <div class="delete-item-name">{{ item.name }}</div>
-                  <div class="delete-item-creator">Criado por: {{ item.created_by }}</div>
+                  <div class="delete-item-creator">Created by: {{ item.created_by }}</div>
                 </div>
               </div>
             </div>
@@ -126,17 +126,17 @@
           >
             <div class="d-flex align-center">
               <v-icon class="mr-3">mdi-alert</v-icon>
-              <span>Esta ação não pode ser desfeita.</span>
+              <span>This action cannot be undone.</span>
             </div>
           </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text color="error" @click="confirmDialog = false">
-            Cancelar
+            Cancel
           </v-btn>
           <v-btn text color="primary" @click="deleteSelectedConfirmed">
-            Confirmar
+            Confirm
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -247,11 +247,11 @@ export default {
       try {
         this.error = null;
         const response = await this.$repositories.perspective.getPerspectives(this.projectId);
-        console.log(">>> Dados recebidos:", response);
+        console.log(">>> Received data:", response);
         this.perspectives = response.results;
       } catch (error) {
-        console.error("Erro ao carregar perspetivas:", error);
-        this.error = "Veja a consola para mais detalhes.";
+        console.error("Error loading perspectives:", error);
+        this.error = "See console for more details.";
       }
     },
     openConfirmDialog() {
@@ -268,8 +268,8 @@ export default {
         this.selected = [];
         this.confirmDialog = false;
       } catch (error) {
-        console.error("Erro ao excluir perspetiva(s):", error);
-        this.error = " Veja a consola para mais detalhes.";
+        console.error("Error deleting perspective(s):", error);
+        this.error = "See console for more details.";
         this.confirmDialog = false;
       }
     },
@@ -284,8 +284,8 @@ export default {
           this.detailsDialog = true;
         }
       } catch (error) {
-        console.error("Erro ao carregar detalhes da perspectiva:", error);
-        this.error = "Veja a consola para mais detalhes.";
+        console.error("Error loading perspective details:", error);
+        this.error = "See console for more details.";
       }
     },
     formatDate(date) {
