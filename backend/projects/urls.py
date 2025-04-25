@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views.member import MemberDetail, MemberList, MyRole
-from .views.project import CloneProject, ProjectDetail, ProjectList, PerspectiveListCreateView, PerspectiveDetailView
+from .views.project import CloneProject, ProjectDetail, ProjectList, PerspectiveListCreateView, PerspectiveDetailView, ProjectAnnotationsView
 from .views.tag import TagDetail, TagList
 
 urlpatterns = [
@@ -15,4 +15,5 @@ urlpatterns = [
     path(route="projects/<int:project_id>/members/<int:member_id>", view=MemberDetail.as_view(), name="member_detail"),
     path(route="projects/<int:project_id>/perspective",view=PerspectiveListCreateView.as_view(),name="perspective_list_create"),
     path(route="projects/<int:project_id>/perspective/<int:perspective_id>", view=PerspectiveDetailView.as_view(), name="perspective_detail"),
+    path(route="projects/<int:project_id>/discrepancies/auto", view=ProjectAnnotationsView.as_view(), name="project_annotations"),
 ]

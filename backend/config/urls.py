@@ -66,6 +66,8 @@ urlpatterns += [
     path("v1/projects/<int:project_id>/", include("examples.urls")),
     path("v1/projects/<int:project_id>/", include("labels.urls")),
     path("v1/projects/<int:project_id>/", include("label_types.urls")),
+    path("v1/projects/<int:project_id>/discrepancies/auto/", include("projects.urls")),
     path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
+    # Keep the catch-all pattern at the very end
     re_path("", TemplateView.as_view(template_name="index.html")),
 ]

@@ -6,6 +6,7 @@ from rest_framework import filters, generics, status, views
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveDestroyAPIView
+from rest_framework.views import APIView
 
 from projects.models import Project
 from projects.permissions import IsProjectAdmin, IsProjectStaffAndReadOnly
@@ -13,6 +14,9 @@ from projects.serializers import ProjectPolymorphicSerializer
 
 from projects.models import Perspective
 from projects.serializers import PerspectiveSerializer
+
+from examples.models import Example
+from labels.models import Span, Category
 
 
 class ProjectList(generics.ListCreateAPIView):
@@ -135,3 +139,97 @@ class PerspectiveDetailView(RetrieveDestroyAPIView):
     permission_classes = [IsAuthenticated & IsProjectAdmin]  # Ou ajuste conforme necessário
     queryset = Perspective.objects.all()
     lookup_url_kwarg = "perspective_id"
+
+class ProjectAnnotationsView(APIView):
+    permission_classes = [IsAuthenticated & (IsProjectAdmin | IsProjectStaffAndReadOnly)]
+
+    def get(self, request, project_id):
+        """
+        List all annotations for examples in a project and calculate label distribution
+        """
+        try:
+            # Verificar se o projeto existe
+            project = get_object_or_404(Project, id=project_id)
+            
+            # Buscar todos os exemplos do projeto
+            examples = Example.objects.filter(project_id=project_id)
+            
+            # Dicionários para armazenar contagens de labels
+            span_label_counts = {}
+            category_label_counts = {}
+            total_spans = 0
+            total_categories = 0
+            
+            # Organizar as anotações por exemplo
+            annotation_data = {}
+            for example in examples:
+                example_id = example.id
+                annotation_data[example_id] = {
+                    'example_text': example.text,
+                    'annotations': []
+                }
+                
+                # Buscar anotações de sequence labeling (spans)
+                spans = Span.objects.filter(example=example)
+                for span in spans:
+                    label_text = span.label.text
+                    span_label_counts[label_text] = span_label_counts.get(label_text, 0) + 1
+                    total_spans += 1
+                    
+                    annotation_info = {
+                        'type': 'span',
+                        'user': span.user.username,
+                        'label': label_text,
+                        'start_offset': span.start_offset,
+                        'end_offset': span.end_offset,
+                        'text': example.text[span.start_offset:span.end_offset],
+                        'created_at': span.created_at
+                    }
+                    annotation_data[example_id]['annotations'].append(annotation_info)
+                
+                # Buscar anotações de text classification (categories)
+                categories = Category.objects.filter(example=example)
+                for category in categories:
+                    label_text = category.label.text
+                    category_label_counts[label_text] = category_label_counts.get(label_text, 0) + 1
+                    total_categories += 1
+                    
+                    annotation_info = {
+                        'type': 'category',
+                        'user': category.user.username,
+                        'label': label_text,
+                        'created_at': category.created_at
+                    }
+                    annotation_data[example_id]['annotations'].append(annotation_info)
+            
+            # Calcular porcentagens para cada tipo de label
+            span_label_distribution = {
+                label: {
+                    'count': count,
+                    'percentage': round((count / total_spans * 100) if total_spans > 0 else 0, 2)
+                }
+                for label, count in span_label_counts.items()
+            }
+            
+            category_label_distribution = {
+                label: {
+                    'count': count,
+                    'percentage': round((count / total_categories * 100) if total_categories > 0 else 0, 2)
+                }
+                for label, count in category_label_counts.items()
+            }
+            
+            return Response({
+                'project_id': project_id,
+                'examples': annotation_data,
+                'label_distribution': {
+                    'sequence_labeling': span_label_distribution,
+                    'text_classification': category_label_distribution
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
