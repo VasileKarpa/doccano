@@ -44,7 +44,8 @@ import {
   mdiChartBox,
   mdiPlayCircleOutline,
   mdiCompare,
-  mdiBallot
+  mdiBallot,
+  mdiFileChartCheckOutline        // ← novo ícone
 } from '@mdi/js'
 
 import { getLinkToAnnotationPage } from '~/presenter/linkToAnnotationPage'
@@ -97,7 +98,7 @@ export default {
         /* ――― sempre visíveis ――― */
         { icon: mdiChartBox, text: this.$t('Discrepancies'),         link: 'discrepancies',        isVisible: true },
 
-        /* ↓↓↓ NOVO ITEM ↓↓↓ */
+        /* ↓↓↓ NOVOS/EXISTENTES ↓↓↓ */
         {
           icon: mdiCompare,
           text: 'Annotations Comparator',
@@ -109,6 +110,13 @@ export default {
           icon: mdiBallot,
           text: 'Discussion',
           link: 'discussion',
+          isVisible: true
+        },
+
+        {
+          icon: mdiFileChartCheckOutline,   // ← novo item “Statistics”
+          text: 'Statistics',
+          link: 'statistics',
           isVisible: true
         },
 
