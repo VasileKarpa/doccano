@@ -27,34 +27,41 @@ function toPayload(item: LabelItem): { [key: string]: any } {
 export class APILabelRepository implements LabelRepository {
   constructor(private readonly baseUrl = 'label', private readonly request = ApiService) {}
 
+  private getPluralUrl(): string {
+    if (this.baseUrl === 'label') {
+      return 'categories'
+    }
+    return `${this.baseUrl}s`
+  }
+
   async list(projectId: string): Promise<LabelItem[]> {
-    const url = `/projects/${projectId}/${this.baseUrl}s`
+    const url = `/projects/${projectId}/${this.getPluralUrl()}`
     const response = await this.request.get(url)
     return response.data.map((item: { [key: string]: any }) => toModel(item))
   }
 
   async findById(projectId: string, labelId: number): Promise<LabelItem> {
-    const url = `/projects/${projectId}/${this.baseUrl}s/${labelId}`
+    const url = `/projects/${projectId}/${this.getPluralUrl()}/${labelId}`
     const response = await this.request.get(url)
     return toModel(response.data)
   }
 
   async create(projectId: string, item: LabelItem): Promise<LabelItem> {
-    const url = `/projects/${projectId}/${this.baseUrl}s`
+    const url = `/projects/${projectId}/${this.getPluralUrl()}`
     const payload = toPayload(item)
     const response = await this.request.post(url, payload)
     return toModel(response.data)
   }
 
   async update(projectId: string, item: LabelItem): Promise<LabelItem> {
-    const url = `/projects/${projectId}/${this.baseUrl}s/${item.id}`
+    const url = `/projects/${projectId}/${this.getPluralUrl()}/${item.id}`
     const payload = toPayload(item)
     const response = await this.request.patch(url, payload)
     return toModel(response.data)
   }
 
   async bulkDelete(projectId: string, labelIds: number[]): Promise<void> {
-    const url = `/projects/${projectId}/${this.baseUrl}s`
+    const url = `/projects/${projectId}/${this.getPluralUrl()}`
     await this.request.delete(url, { ids: labelIds })
   }
 

@@ -1,5 +1,5 @@
 import { Plugin } from "@nuxt/types";
-import { repositories } from "./repositories"; // Importamos o objeto repositories corretamente
+import { repositories } from "./repositories";
 import { ExampleApplicationService } from "@/services/application/example/exampleApplicationService";
 import { LabelApplicationService } from "@/services/application/label/labelApplicationService";
 import { OptionApplicationService } from "@/services/application/option/optionApplicationService";
@@ -45,11 +45,10 @@ const plugin: Plugin = (_, inject) => {
     tag: new TagApplicationService(repositories.tag),
     bbox: new BoundingBoxApplicationService(repositories.boundingBox),
     segmentation: new SegmentationApplicationService(repositories.segmentation),
-
-    // Perspective (Repositório injetado)
-    perspective: new PerspectiveApplicationService(repositories.perspective),
+    perspective: new PerspectiveApplicationService(repositories.perspective)
   };
-  inject("services", services);
+
+  inject('services', services);
 };
 
 export default plugin;

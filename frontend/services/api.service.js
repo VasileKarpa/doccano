@@ -4,12 +4,21 @@ axios.defaults.xsrfHeaderName = 'X-CSRFToken'
 
 class ApiService {
   constructor() {
+    console.log('Initializing API service with baseURL:', '/v1')
+    console.log('API_URL environment variable:', process.env.API_URL)
     this.instance = axios.create({
       baseURL: '/v1'
     })
   }
 
   request(method, url, data = {}, config = {}) {
+    console.log('Making request:', {
+      method,
+      url,
+      baseURL: this.instance.defaults.baseURL,
+      fullURL: `${this.instance.defaults.baseURL}${url}`,
+      config
+    })
     return this.instance({
       method,
       url,

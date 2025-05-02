@@ -48,6 +48,7 @@ import FormDelete from '@/components/label/FormDelete.vue'
 import LabelList from '@/components/label/LabelList.vue'
 import { LabelDTO } from '~/services/application/label/labelData'
 import { MemberItem } from '~/domain/models/member/member'
+import { Project } from '~/domain/models/project/project'
 
 export default Vue.extend({
   components: {
@@ -62,7 +63,7 @@ export default Vue.extend({
 
   validate({ params, app, store }) {
     if (/^\d+$/.test(params.id)) {
-      const project = store.getters['projects/project']
+      const project = store.getters['projects/project'] as Project
       if (!project.canDefineLabel) {
         return false
       }
@@ -88,13 +89,15 @@ export default Vue.extend({
   },
 
   computed: {
-    ...mapGetters('projects', ['project']),
+    ...mapGetters('projects', {
+      project: 'project'
+    }),
 
     canOnlyAdd(): boolean {
       if (this.member.isProjectAdmin) {
         return false
       }
-      return this.project.allowMemberToCreateLabelType
+      return (this.project as Project).allowMemberToCreateLabelType
     },
 
     canDelete(): boolean {
@@ -106,25 +109,27 @@ export default Vue.extend({
     },
 
     hasMultiType(): boolean {
-      if ('projectType' in this.project) {
-        return this.isIntentDetectionAndSlotFilling || !!this.project.useRelation
+      const project = this.project as Project
+      if ('projectType' in project) {
+        return this.isIntentDetectionAndSlotFilling || !!project.useRelation
       } else {
         return false
       }
     },
 
     isIntentDetectionAndSlotFilling(): boolean {
-      return this.project.projectType === 'IntentDetectionAndSlotFilling'
+      return (this.project as Project).projectType === 'IntentDetectionAndSlotFilling'
     },
 
     labelType(): string {
+      const project = this.project as Project
       if (this.hasMultiType) {
         if (this.isIntentDetectionAndSlotFilling) {
           return ['category', 'span'][this.tab!]
         } else {
           return ['span', 'relation'][this.tab!]
         }
-      } else if (this.project.canDefineCategory) {
+      } else if (project.canDefineCategory) {
         return 'category'
       } else {
         return 'span'
@@ -132,8 +137,10 @@ export default Vue.extend({
     },
 
     service(): any {
-      if (!('projectType' in this.project)) {
-        return
+      const project = this.project as Project
+      if (!('projectType' in project)) {
+        // Default to category type if project type is not available
+        return this.$services.categoryType
       }
       if (this.hasMultiType) {
         if (this.isIntentDetectionAndSlotFilling) {
@@ -141,7 +148,7 @@ export default Vue.extend({
         } else {
           return [this.$services.spanType, this.$services.relationType][this.tab!]
         }
-      } else if (this.project.canDefineCategory) {
+      } else if (project.canDefineCategory) {
         return this.$services.categoryType
       } else {
         return this.$services.spanType
@@ -162,9 +169,19 @@ export default Vue.extend({
 
   methods: {
     async list() {
-      this.isLoading = true
-      this.items = await this.service.list(this.projectId)
-      this.isLoading = false
+      try {
+        this.isLoading = true
+        if (!this.service) {
+          console.error('Service is not available')
+          return
+        }
+        this.items = await this.service.list(this.projectId)
+      } catch (error) {
+        console.error('Error loading labels:', error)
+        this.items = []
+      } finally {
+        this.isLoading = false
+      }
     },
 
     async remove() {

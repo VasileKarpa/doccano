@@ -24,9 +24,11 @@ import { APICatalogRepository } from '@/repositories/upload/apiCatalogRepository
 import { APIParseRepository } from '@/repositories/upload/apiParseRepository'
 import { APIUserRepository } from '@/repositories/user/apiUserRepository'
 import { APISegmentationRepository } from '~/repositories/tasks/apiSegmentationRepository'
-import { apiPerspectiveRepository } from "@/repositories/perspective/apiPerspectiveRepository";
+import { apiPerspectiveRepository } from "@/repositories/perspective/apiPerspectiveRepository"
 import { APIDiscrepanciesRepository } from '@/repositories/discrepancies/apiDiscrepanciesRepository'
 import { APIDiscussionRepository } from '@/repositories/discussion/apiDiscussionRepository'
+import { StatisticsRepositoryImpl } from '~/domain/repositories/statistics/statisticsRepository'
+import ApiService from '@/services/api.service'
 
 export interface Repositories {
   // User
@@ -80,6 +82,9 @@ export interface Repositories {
 
   // Discussions
   discussion: APIDiscussionRepository
+
+  // Statistics
+  statistics: StatisticsRepositoryImpl
 }
 
 declare module 'vue/types/vue' {
@@ -120,9 +125,9 @@ const repositories: Repositories = {
   download: new APIDownloadRepository(),
 
   // Label Type
-  categoryType: new APILabelRepository('category-type'),
-  spanType: new APILabelRepository('span-type'),
-  relationType: new APILabelRepository('relation-type'),
+  categoryType: new APILabelRepository('category'),
+  spanType: new APILabelRepository('span'),
+  relationType: new APILabelRepository('relation'),
 
   // Label
   category: new APICategoryRepository(),
@@ -135,15 +140,19 @@ const repositories: Repositories = {
   // Perspective
   perspective: apiPerspectiveRepository,
 
+  // Discrepancies
+  discrepancies: new APIDiscrepanciesRepository(),
+
+  // Discussions
   discussion: new APIDiscussionRepository(),
 
-  // Discrepancies
-  discrepancies: new APIDiscrepanciesRepository()
+  // Statistics
+  statistics: new StatisticsRepositoryImpl(ApiService.instance)
 }
 
 const plugin: Plugin = (_, inject) => {
   inject('repositories', repositories)
 }
 
-export default plugin
 export { repositories }
+export default plugin

@@ -91,7 +91,7 @@
 import Vue from 'vue'
 import { mapGetters } from 'vuex'
 import { ExampleDTO } from '~/services/application/example/exampleData'
-import { CategoryType } from '~/domain/models/label/label'
+import { LabelItem } from '~/domain/models/label/label'
 
 export default Vue.extend({
   layout: 'project',
@@ -103,7 +103,7 @@ export default Vue.extend({
     return {
       isLoading: false,
       examples : [] as any[],             // enriquecido com chart
-      labels   : [] as CategoryType[]
+      labels   : [] as LabelItem[]
     }
   },
 
@@ -114,53 +114,69 @@ export default Vue.extend({
 
   async fetch () {
     this.isLoading = true
+    try {
+      /* 1) exemplos + meta-labels */
+      const list = await this.$services.example.list(this.projectId, {})
+      this.labels = await this.$services.categoryType.list(this.projectId)
 
-    /* 1) exemplos + meta-labels */
-    const list   = await this.$services.example.list(this.projectId, {})
-    this.labels  = await this.$services.categoryType.list(this.projectId)
+      /* 2) enriquecer cada example com userLabels + dados p/ gráfico */
+      const enr = await Promise.all(
+        list.items.map(async (ex: ExampleDTO) => {
+          try {
+            /* distribuição por membro */
+            const dist = await this.$repositories.metrics
+              .fetchCategoryDistribution(this.projectId, { example: ex.id })
 
-    /* 2) enriquecer cada example com userLabels + dados p/ gráfico */
-    const enr = await Promise.all(
-      list.items.map(async (ex: ExampleDTO) => {
-
-        /* distribuição por membro */
-        const dist = await this.$repositories.metrics
-          .fetchCategoryDistribution(this.projectId, { example: ex.id })
-
-        // ---- tabela membro → chips ---------------------------------
-        const rows = Object.entries(dist).map(([username, lblCounts]: any) => {
-          const lbls = Object.entries(lblCounts)
-            .filter(([, c]) => c > 0)
-            .map(([text]) => {
-              const meta = this.labels.find(l => l.text === text) || {}
-              return { text, color: meta.backgroundColor || '#E0E0E0' }
+            // ---- tabela membro → chips ---------------------------------
+            const rows = Object.entries(dist).map(([username, lblCounts]: [string, Record<string, number>]) => {
+              const lbls = Object.entries(lblCounts)
+                .filter(([, c]) => c > 0)
+                .map(([text]) => {
+                  const meta = this.labels.find(l => l.text === text)
+                  return { 
+                    text, 
+                    color: meta?.backgroundColor || '#E0E0E0' 
+                  }
+                })
+              return { username, labels: lbls }
             })
-          return { username, labels: lbls }
+
+            // ---- dados para grafico  -----------------------------------
+            const total = Object.entries(dist).reduce((acc: Record<string, number>, [, l]) => {
+              for (const [t, c] of Object.entries(l)) acc[t] = (acc[t] || 0) + c
+              return acc
+            }, {})
+
+            const chartLabels = Object.keys(total)
+            const chartCounts = chartLabels.map(l => total[l])
+            const chartColors = chartLabels.map(l => {
+              const meta = this.labels.find(x => x.text === l)
+              return meta?.backgroundColor || '#90CAF9'
+            })
+
+            return {
+              ...ex,
+              userLabels: rows,
+              chart: { labels: chartLabels, counts: chartCounts, colors: chartColors }
+            }
+          } catch (error) {
+            console.error(`Error processing example ${ex.id}:`, error)
+            return {
+              ...ex,
+              userLabels: [],
+              chart: { labels: [], counts: [], colors: [] }
+            }
+          }
         })
+      )
 
-        // ---- dados para grafico  -----------------------------------
-        const total = Object.entries(dist).reduce((acc: any, [, l]) => {
-          for (const [t, c] of Object.entries(l)) acc[t] = (acc[t] || 0) + (c as number)
-          return acc
-        }, {})
-
-        const chartLabels = Object.keys(total)
-        const chartCounts = chartLabels.map(l => total[l])
-        const chartColors = chartLabels.map(l => {
-          const meta = this.labels.find(x => x.text === l) || {}
-          return meta.backgroundColor || '#90CAF9'
-        })
-
-        return {
-          ...ex,
-          userLabels: rows,
-          chart: { labels: chartLabels, counts: chartCounts, colors: chartColors }
-        }
-      })
-    )
-
-    this.examples  = enr
-    this.isLoading = false
+      this.examples = enr
+    } catch (error) {
+      console.error('Error loading annotations comparator:', error)
+      this.examples = []
+    } finally {
+      this.isLoading = false
+    }
   }
 })
 </script>
