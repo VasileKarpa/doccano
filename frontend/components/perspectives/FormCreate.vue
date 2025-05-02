@@ -17,7 +17,7 @@
       <v-select
         v-model="form.data_type"
         :items="dataTypes"
-        label="Tipo de Dado"
+        label="Data Type"
         :rules="[rules.required]"
         required
       ></v-select>
